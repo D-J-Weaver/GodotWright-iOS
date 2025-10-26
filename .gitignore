@@ -1,0 +1,41 @@
+# Godot-specific ignores
+.import/
+*.apk
+*.apk.*
+*.import
+.godot/imported/*
+.godot/shader_cache
+*.orig
+
+# vscode
+.vscode
+
+# GDUnit
+reports/
+
+# Imported translations (automatically generated from CSV files)
+*.translation
+
+#Build related
+export/*
+*.zip
+*.app
+*x11.64
+*.swp
+
+#PyWright specific
+PyWright/*
+games/*
+pywright-gpu-master/*
+dir.index
+PyWright 0.989 Beta - copy FINAL/*
+files.index
+System/Playing/*
+
+
+#MacOS
+*.DS_Store
+
+#Windows
+*Thumbs.db
+ffmpeg.exe
