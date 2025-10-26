@@ -1,0 +1,40 @@
+name: Build GodotWright for iOS
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v4
+
+    - name: Download Godot
+      uses: firebelley/setup-godot@v1
+      with:
+        godot-version: "4.3"
+        use-headless: true
+
+    - name: Export iOS project
+      run: |
+        mkdir -p build/ios
+        godot --headless --export-release "iOS" "build/ios/GodotWright.xcodeproj"
+
+    - name: Build .ipa with Xcode
+      run: |
+        cd build/ios
+        xcodebuild -scheme GodotWright \
+          -configuration Release \
+          -archivePath build/GodotWright.xcarchive archive
+        xcodebuild -exportArchive \
+          -archivePath build/GodotWright.xcarchive \
+          -exportPath . \
+          -exportOptionsPlist /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/Library/Xcode/DefaultExportOptionsPlist.plist
+
+    - name: Upload .ipa artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: GodotWright-iOS
+        path: build/ios/*.ipa
