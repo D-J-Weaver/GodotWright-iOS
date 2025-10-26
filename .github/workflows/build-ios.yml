@@ -6,25 +6,51 @@ on:
 jobs:
   build:
     runs-on: macos-latest
+    timeout-minutes: 60
 
     steps:
     - name: Checkout repo
       uses: actions/checkout@v4
 
-    - name: Download Godot
-      uses: firebelley/setup-godot@v1
-      with:
-        godot-version: "4.3"
-        use-headless: true
+    - name: Install Homebrew (if missing) & Godot
+      shell: bash
+      run: |
+        # Ensure Homebrew is available (mac runners usually have it, but this is safe)
+        if ! command -v brew >/dev/null 2>&1; then
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+          eval "$(/opt/homebrew/bin/brew shellenv)" || true
+        fi
+        # Install Godot (Cask installs an app bundle)
+        brew install --cask godot
+
+    - name: Show Godot version
+      run: |
+        # Godot app bundle binary path (Intel/Apple Silicon differences handled by 'open -a' + exec)
+        GODOT_BIN="/Applications/Godot.app/Contents/MacOS/Godot"
+        if [ ! -x "$GODOT_BIN" ]; then
+          echo "Godot binary not found at $GODOT_BIN, listing /Applications:"
+          ls -la /Applications
+          exit 1
+        fi
+        "$GODOT_BIN" --version
 
     - name: Export iOS project
+      shell: bash
       run: |
+        # create output dir
         mkdir -p build/ios
-        godot --headless --export-release "iOS" "build/ios/GodotWright.xcodeproj"
+        GODOT_BIN="/Applications/Godot.app/Contents/MacOS/Godot"
+        # The exact export name depends on your project export preset in project.godot.
+        # This attempts to export using the built-in "iOS" export preset name.
+        "$GODOT_BIN" --headless --export-release "iOS" "build/ios/GodotWright.xcodeproj"
+        ls -la build/ios || true
 
     - name: Build .ipa with Xcode
+      shell: bash
       run: |
-        cd build/ios
+        cd build/ios || exit 1
+        # Attempt to build the Xcode project produced by the Godot export
+        # If your exported Xcode project has a different scheme or project name, edit "-scheme" below.
         xcodebuild -scheme GodotWright \
           -configuration Release \
           -archivePath build/GodotWright.xcarchive archive
